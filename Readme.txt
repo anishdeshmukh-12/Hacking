@@ -7,7 +7,7 @@ Before you can try this game you will need some modules installed:
 
 To Install these you first need to install python and then :
 
-pip install pygame : install pygame
+pip install pygame       to install pygame
 I have attached uagame file, you can download it from there. 
 
 You will also need some audio files which I have attached to run the Improved version of game 
