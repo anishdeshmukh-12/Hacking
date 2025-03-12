@@ -102,7 +102,7 @@ def display_hint(window, password, guess, location, win):
 # calculate score
 def calculate_score(attempts_left, start_time, end_time):
     time_taken = end_time - start_time
-    base_score = attempts_left * 100 + 100
+    base_score = attempts_left * 100
     time_penalty = int(time_taken) 
     return max(0, base_score - time_penalty)
 
