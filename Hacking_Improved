@@ -1,0 +1,157 @@
+# Hacking Version 7
+# This is a graphical password guessing game that displays a
+# list of potential computer passwords. The player is allowed
+# up to 4 attempts to guess the password. Each time the user
+# guesses incorrectly, the number of correct letters in their
+# correct locations is displayed and the user is prompted to
+# make a new guess. The game indicates whether the player
+# successfully guessed the password or not.
+
+from uagame import Window
+from time import sleep, time
+from random import randint, choice
+import pygame
+
+def main():
+    pygame.mixer.init()
+    pygame.mixer.music.load("suspense_music.mp3")
+    pygame.mixer.music.play(-1)
+    location = [0,0]
+    attempts = 4
+    window = create_window()
+    display_header(window, location, attempts)
+    password = display_password_list(window, location)
+    start_time = time()
+    guess, attempts_left = get_guesses(window, password, location, attempts)
+    end_time = time()
+    score = calculate_score(attempts_left, start_time, end_time)
+    pygame.mixer.music.stop()
+    end_game(window, guess, password, score)
+
+def create_window():
+    window = Window('Hacking', 600, 500)
+    window.set_font_name('couriernew')
+    window.set_font_size(18)
+    window.set_font_color('green')
+    window.set_bg_color('black')
+    return window
+
+def display_header(window, location, attempts):
+    header = ['DEBUG MODE', str(attempts) + ' ATTEMPT(S) LEFT', '']
+    for header_line in header:
+        display_line(window, header_line, location)
+
+def display_password_list(window, location):
+    embedded_size = 20
+    password_list = ['PROVIDE', 'SETTING', 'CANTINA', 'CUTTING', 'HUNTERS', 'SURVIVE', 'HEARING', 'HUNTING', 'REALIZE', 'NOTHING', 'OVERLAP', 'FINDING', 'PUTTING']
+    for password in password_list:
+        password_line = embed_password(password, embedded_size)
+        display_line(window, password_line, location)
+    display_line(window, '', location)
+    return choice(password_list)
+
+    
+def embed_password(password, size):
+    fill = '!@#$%^*()-+=~[]{}'
+    password_size = len(password)
+    embedding = ''
+    split_index = randint(0, size - password_size)
+    for index in range(0, split_index):
+        embedding = embedding + choice(fill)
+    embedding = embedding + password
+    for index in range(split_index + password_size, size):
+        embedding = embedding + choice(fill)
+    return embedding
+
+def get_guesses(window, password, location, attempts_left):
+    prompt = 'ENTER PASSWORD >'
+    feedback_location = [window.get_width() // 2, 0]
+    guess = prompt_user(window, prompt, location)
+    attempts_left -= 1
+    
+    while guess != password and attempts_left > 0:
+        window.draw_string(str(attempts_left), 0, window.get_font_height())
+        check_warning(window, attempts_left)
+        display_hint(window, password, guess, feedback_location, window)
+        guess = prompt_user(window, prompt, location)
+        attempts_left -= 1
+    return guess, attempts_left
+
+def check_warning(window, attempts_left):
+    warning_string = '*** LOCKOUT WARNING ***'
+    if attempts_left == 1:
+        warning_x = window.get_width() - window.get_string_width(warning_string)
+        warning_y = window.get_height() - window.get_font_height()
+        window.draw_string(warning_string, warning_x, warning_y)
+        pygame.mixer.music.stop()
+        pygame.mixer.Sound("beep.mp3").play()
+        sleep(5)
+        pygame.mixer.Sound("suspense_music.mp3").play()
+        
+def display_hint(window, password, guess, location, win):
+    win.set_font_color('red')
+    display_line(window, guess + ' INCORRECT', location)
+    win.set_font_color('green')
+    index = 0
+    correct = 0
+    max = len(password)
+    for letter in guess:
+        if (index < max) and (letter == password[index]):
+            correct += 1
+        index += 1
+    string = str(correct) + '/' + str(max) + ' IN MATCHING POSITIONS'
+    display_line(window, string, location)
+
+def calculate_score(attempts_left, start_time, end_time):
+    time_taken = end_time - start_time
+    base_score = attempts_left * 100 + 100
+    time_penalty = int(time_taken) 
+    return max(0, base_score - time_penalty)
+
+def end_game(window, guess, password, score):
+    window.clear()
+    pygame.mixer.music.stop()
+    if guess == password:
+        pygame.mixer.Sound("success.mp3").play()
+        window.set_font_color('green')
+        outcome = [guess, '', 'EXITING DEBUG MODE', '', 'LOGIN SUCCESSFUL - WELCOME BACK', '', f'SCORE: {score}/400']
+        prompt = 'PRESS ENTER TO CONTINUE'
+        
+    else:
+        pygame.mixer.Sound("failure.mp3").play()
+        window.set_font_color('red')
+        outcome = [guess, '', 'LOGIN FAILURE - TERMINAL LOCKED', '','PLEASE CONTACT AN ADMINISTRATOR', '', f'SCORE: {score}/400']
+        prompt = 'PRESS ENTER TO EXIT'
+        
+    
+    window.update()
+    location = display_outcome(window, outcome)
+    location[0] = (window.get_width() - window.get_string_width(prompt)) // 2
+    prompt_user(window, prompt, location)
+    window.close()
+
+def display_outcome(window, outcome):
+    string_height = window.get_font_height()
+    outcome_height = (len(outcome) + 1) * string_height
+    y_space = window.get_height() - outcome_height
+    line_y = y_space // 2
+    location = [0, line_y]
+    for outcome_line in outcome:
+        x_space = window.get_width() - window.get_string_width(outcome_line)
+        location[0] = x_space // 2
+        display_line(window, outcome_line, location)
+    return location
+
+def display_line(window, string, location):
+    pause_time = 0.3
+    window.draw_string(string, location[0], location[1])
+    window.update()
+    sleep(pause_time)
+    location[1] += window.get_font_height()
+
+def prompt_user(window, prompt, location):
+    input = window.input_string(prompt, location[0], location[1])
+    location[1] += window.get_font_height()
+    return input
+
+main()
